@@ -4,7 +4,6 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from multiprocessing import Pool, cpu_count
 
-
 class EASE:
     def __init__(self):
         self.user_enc = LabelEncoder()
@@ -43,9 +42,13 @@ class EASE:
 
     def predict(self, train, users, items, k):
         items = self.item_enc.transform(items)
-        dd = train.loc[train.user_id.isin(users)]
-        dd['ci'] = self.item_enc.transform(dd.item_id)
-        dd['cu'] = self.user_enc.transform(dd.user_id)
+        # to resolve SettingWithCopyWarning
+        # dd = train.loc[train.user_id.isin(users)]
+        # dd['ci'] = self.item_enc.transform(dd.item_id)
+        # dd['cu'] = self.user_enc.transform(dd.user_id)
+        dd = train.loc[train.user_id.isin(users)].copy()
+        dd.loc[:, 'ci'] = self.item_enc.transform(dd.loc[:, 'item_id'])
+        dd.loc[:, 'cu'] = self.user_enc.transform(dd.loc[:, 'user_id'])
         g = dd.groupby('cu')
         with Pool(cpu_count()) as p:
             user_preds = p.starmap(
